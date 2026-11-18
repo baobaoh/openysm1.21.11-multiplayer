@@ -1,0 +1,27 @@
+# Gradle / 构建产物
+.gradle/
+**/build/
+**/run/
+**/run-client/
+**/run-client2/
+**/run-server/
+
+# 第三方依赖 jar（约 172 MB，不入库，见 README「构建」一节）
+libs/
+
+# IDE
+.idea/
+*.iml
+out/
+gen/
+.vscode/
+
+# 运行时缓存与日志
+*.log
+**/logs/
+**/crash-reports/
+fabric.properties
+
+# 系统垃圾
+.DS_Store
+Thumbs.db
