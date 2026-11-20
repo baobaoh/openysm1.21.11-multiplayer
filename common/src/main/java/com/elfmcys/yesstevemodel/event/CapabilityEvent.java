@@ -68,6 +68,21 @@ public final class CapabilityEvent {
         });
         // 重生后客户端世界里其他玩家的实体是重建的，需要重新把别人的模型推给他
         replayAllModelsTo(newPlayer);
+        // 自己重生后实体 id 变了，别人客户端上旧实体已经没了，
+        // 必须用新的 id 再广播一次，否则别人看你是「没模型」
+        getModelInfoCap(newPlayer).ifPresent(cap -> {
+            String modelId = cap.getModelId();
+            Optional<S2CSetModelAndTexturePacket> msg = cap.createSyncMessage(newPlayer, false);
+            YesSteveModel.LOGGER.info("[YSM-CLONE] player={} oldId={} newId={} oldModel={} newModel={} hasMsg={} defPresent={}",
+                    newPlayer.getGameProfile().name(), oldPlayer.getId(), newPlayer.getId(),
+                    oldModelInfoCap.map(ModelInfoCapability::getModelId).orElse("<none>"),
+                    modelId == null ? "<null>" : modelId,
+                    msg.isPresent(),
+                    modelId != null && ServerModelManager.getModelDefinition(modelId).isPresent());
+            if (modelId != null && !modelId.isEmpty()) {
+                msg.ifPresent(NetworkHandler::sendToAll);
+            }
+        });
     }
 
     /**
@@ -82,6 +97,12 @@ public final class CapabilityEvent {
         }
         for (ServerPlayer other : server.getPlayerList().getPlayers()) {
             if (other == target) {
+                continue;
+            }
+            // 正在死亡/已被移除的玩家实体 id 已经作废，发给客户端只会绑到一个不存在的实体上
+            if (other.isRemoved() || other.isDeadOrDying()) {
+                YesSteveModel.LOGGER.info("[YSM-SYNC] replay skip dead player: to={} owner={} removed={} dying={}",
+                        target.getGameProfile().name(), other.getGameProfile().name(), other.isRemoved(), other.isDeadOrDying());
                 continue;
             }
             getModelInfoCap(other).ifPresent(otherCap -> {
@@ -109,6 +130,8 @@ public final class CapabilityEvent {
                 }
                 modelInfoCap.stopAnimation(player);
                 Optional<S2CSetModelAndTexturePacket> optional = modelInfoCap.createSyncMessage(player, false);
+                YesSteveModel.LOGGER.info("[YSM-ADD] player={} id={} model={} hasMessage={}",
+                        player.getGameProfile().name(), player.getId(), modelInfoCap.getModelId(), optional.isPresent());
                 // 广播：新玩家进服时让已在线的其他玩家也知道他穿了什么模型
                 Consumer<? super S2CSetModelAndTexturePacket> consumer = NetworkHandler::sendToAll;
                 Objects.requireNonNull(modelInfoCap);

@@ -117,7 +117,7 @@ public class ModelInfoCapability {
                 if (consumerPoll != null) {
                     consumerPoll.accept(object2FloatOpenHashMap);
                 } else {
-                    return new S2CSetModelAndTexturePacket(serverPlayer.getId(), this.modelId, this.selectTexture, this.disabled, this.animSync.buildFullSyncMessage(serverPlayer, fullSync).setMolangVars(it.getLoadedModelData().getHashId(), object2FloatOpenHashMap));
+                    return new S2CSetModelAndTexturePacket(serverPlayer.getId(), serverPlayer.getUUID(), this.modelId, this.selectTexture, this.disabled, this.animSync.buildFullSyncMessage(serverPlayer, fullSync).setMolangVars(it.getLoadedModelData().getHashId(), object2FloatOpenHashMap));
                 }
             }
         });
