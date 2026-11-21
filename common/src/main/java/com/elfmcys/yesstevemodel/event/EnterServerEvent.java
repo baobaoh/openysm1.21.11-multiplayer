@@ -33,7 +33,12 @@ public final class EnterServerEvent {
                 }
                 modelInfoCap.stopAnimation(player);
                 Optional<S2CSetModelAndTexturePacket> optional = modelInfoCap.createSyncMessage(player, false);
-                Consumer<? super S2CSetModelAndTexturePacket> consumer = message -> NetworkHandler.sendToClientPlayer(message, player);
+                Consumer<? super S2CSetModelAndTexturePacket> consumer = message -> {
+                    NetworkHandler.sendToClientPlayer(message, player);
+                    // 同时广播给所有在线玩家：别人此刻可能离得很远、客户端世界里还没有这个实体，
+                    // 客户端会按 UUID 记住，等实体进入视野时自己贴上去。
+                    NetworkHandler.sendToAll(message);
+                };
                 Objects.requireNonNull(modelInfoCap);
                 optional.ifPresentOrElse(consumer, modelInfoCap::markDirty);
             });
